@@ -1,0 +1,19 @@
+<resources>
+    <string name="app_name">Auto Backup Pro</string>
+    <string name="channel_name">Backup Service</string>
+    <string name="channel_description">Notifications for backup service</string>
+    
+    <!-- Colors -->
+    <color name="primary">#2196F3</color>
+    <color name="secondary">#4CAF50</color>
+    <color name="error">#F44336</color>
+    <color name="warning">#FF9800</color>
+    <color name="info">#00BCD4</color>
+    <color name="telegram">#0088cc</color>
+    <color name="about">#9C27B0</color>
+    <color name="refresh">#607D8B</color>
+    
+    <color name="background">#F5F5F5</color>
+    <color name="text_primary">#212121</color>
+    <color name="text_secondary">#757575</color>
+</resources>
