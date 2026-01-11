@@ -24,10 +24,13 @@ jobs:
     - name: Setup Android SDK
       uses: android-actions/setup-android@v3
       
-    - name: Create Gradle Wrapper if missing
+    - name: Create Project Structure
       run: |
-        # Create directory structure
+        # Create necessary directories
         mkdir -p gradle/wrapper
+        mkdir -p app/src/main/java/com/personal/autobackup
+        mkdir -p app/src/main/res/layout
+        mkdir -p app/src/main/res/values
         
         # Create gradle-wrapper.properties
         cat > gradle/wrapper/gradle-wrapper.properties << 'EOF'
@@ -38,137 +41,180 @@ jobs:
         zipStorePath=wrapper/dists
         EOF
         
-        # Create simplified gradlew script
+        # Create simplified gradlew
         cat > gradlew << 'EOF'
         #!/usr/bin/env bash
         set -e
-        SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
-        JAR_PATH="$SCRIPT_DIR/gradle/wrapper/gradle-wrapper.jar"
+        DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+        JAR="$DIR/gradle/wrapper/gradle-wrapper.jar"
         
-        if [ ! -f "$JAR_PATH" ]; then
+        if [ ! -f "$JAR" ]; then
             echo "Downloading gradle-wrapper.jar..."
-            mkdir -p "$(dirname "$JAR_PATH")"
-            curl -L -o "$JAR_PATH" "https://github.com/gradle/gradle/raw/master/gradle/wrapper/gradle-wrapper.jar" || \
-            wget -O "$JAR_PATH" "https://github.com/gradle/gradle/raw/master/gradle/wrapper/gradle-wrapper.jar"
+            mkdir -p "$(dirname "$JAR")"
+            wget -q -O "$JAR" "https://github.com/gradle/gradle/raw/master/gradle/wrapper/gradle-wrapper.jar"
         fi
         
-        JAVA_OPTS="${JAVA_OPTS:--Xmx64m -Xms64m}"
-        exec java $JAVA_OPTS -jar "$JAR_PATH" "$@"
+        # Run Gradle
+        java -Xmx64m -jar "$JAR" "$@"
         EOF
         
-        # Create gradlew.bat for Windows
-        cat > gradlew.bat << 'EOF'
-        @echo off
-        set DIRNAME=%~dp0
-        if "%DIRNAME%" == "" set DIRNAME=.
-        set APP_HOME=%DIRNAME%
-        java -jar "%APP_HOME%\gradle\wrapper\gradle-wrapper.jar" %*
-        EOF
-        
-        # Make gradlew executable
         chmod +x gradlew
         
-    - name: Create Android project structure
+        # Create gradlew.bat
+        cat > gradlew.bat << 'EOF'
+        @echo off
+        set DIR=%~dp0
+        if "%DIR%" == "" set DIR=.
+        java -jar "%DIR%\gradle\wrapper\gradle-wrapper.jar" %*
+        EOF
+        
+    - name: Create Required Gradle Files
       run: |
-        # Create app directory if it doesn't exist
-        mkdir -p app/src/main/java/com/personal/autobackup
-        mkdir -p app/src/main/res
+        # Create settings.gradle
+        echo "include ':app'" > settings.gradle
         
-        # Create settings.gradle if missing
-        if [ ! -f settings.gradle ]; then
-          echo "include ':app'" > settings.gradle
-        fi
+        # Create root build.gradle with proper repositories
+        cat > build.gradle << 'EOF'
+        buildscript {
+            repositories {
+                google()
+                mavenCentral()
+            }
+            dependencies {
+                classpath 'com.android.tools.build:gradle:8.2.0'
+                classpath 'org.jetbrains.kotlin:kotlin-gradle-plugin:1.9.0'
+            }
+        }
         
-        # Create root build.gradle if missing
-        if [ ! -f build.gradle ]; then
-          cat > build.gradle << 'EOF'
-          buildscript {
-              repositories {
-                  google()
-                  mavenCentral()
-              }
-              dependencies {
-                  classpath 'com.android.tools.build:gradle:8.2.0'
-              }
-          }
-          
-          allprojects {
-              repositories {
-                  google()
-                  mavenCentral()
-              }
-          }
-          
-          task clean(type: Delete) {
-              delete rootProject.buildDir
-          }
-          EOF
-        fi
+        allprojects {
+            repositories {
+                google()
+                mavenCentral()
+            }
+        }
         
-        # Create app build.gradle if missing
-        if [ ! -f app/build.gradle ]; then
-          mkdir -p app
-          cat > app/build.gradle << 'EOF'
-          plugins {
-              id 'com.android.application'
-              id 'org.jetbrains.kotlin.android'
-          }
-          
-          android {
-              namespace 'com.personal.autobackup'
-              compileSdk 34
-              
-              defaultConfig {
-                  applicationId "com.personal.autobackup"
-                  minSdk 21
-                  targetSdk 34
-                  versionCode 1
-                  versionName "1.0.0"
-              }
-              
-              buildTypes {
-                  release {
-                      minifyEnabled false
-                      proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
-                  }
-              }
-              
-              compileOptions {
-                  sourceCompatibility JavaVersion.VERSION_17
-                  targetCompatibility JavaVersion.VERSION_17
-              }
-              
-              kotlinOptions {
-                  jvmTarget = '17'
-              }
-          }
-          
-          dependencies {
-              implementation 'androidx.core:core-ktx:1.12.0'
-              implementation 'androidx.appcompat:appcompat:1.6.1'
-              implementation 'com.google.android.material:material:1.10.0'
-              implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
-          }
-          EOF
-        fi
+        task clean(type: Delete) {
+            delete rootProject.buildDir
+        }
+        EOF
         
-    - name: Download gradle-wrapper.jar
+        # Create app build.gradle
+        cat > app/build.gradle << 'EOF'
+        plugins {
+            id 'com.android.application'
+            id 'org.jetbrains.kotlin.android'
+        }
+        
+        android {
+            namespace 'com.personal.autobackup'
+            compileSdk 34
+        
+            defaultConfig {
+                applicationId "com.personal.autobackup"
+                minSdk 21
+                targetSdk 34
+                versionCode 1
+                versionName "1.0.0"
+            }
+        
+            buildTypes {
+                release {
+                    minifyEnabled false
+                    proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+                }
+            }
+        
+            compileOptions {
+                sourceCompatibility JavaVersion.VERSION_17
+                targetCompatibility JavaVersion.VERSION_17
+            }
+        
+            kotlinOptions {
+                jvmTarget = '17'
+            }
+        }
+        
+        dependencies {
+            implementation 'androidx.core:core-ktx:1.12.0'
+            implementation 'androidx.appcompat:appcompat:1.6.1'
+            implementation 'com.google.android.material:material:1.10.0'
+            implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
+            
+            // Networking
+            implementation 'com.squareup.okhttp3:okhttp:4.12.0'
+            
+            // JSON
+            implementation 'org.json:json:20230227'
+            
+            // WorkManager
+            implementation 'androidx.work:work-runtime-ktx:2.8.1'
+        }
+        EOF
+        
+        # Create basic AndroidManifest.xml
+        cat > app/src/main/AndroidManifest.xml << 'EOF'
+        <?xml version="1.0" encoding="utf-8"?>
+        <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+            xmlns:tools="http://schemas.android.com/tools">
+        
+            <uses-permission android:name="android.permission.INTERNET" />
+            <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+            <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+            <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+            <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+            <uses-permission android:name="android.permission.WAKE_LOCK" />
+        
+            <application
+                android:allowBackup="true"
+                android:icon="@mipmap/ic_launcher"
+                android:label="Auto Backup Pro"
+                android:theme="@style/Theme.AppCompat.Light"
+                android:usesCleartextTraffic="true"
+                tools:targetApi="31">
+                
+                <activity
+                    android:name=".MainActivity"
+                    android:exported="true">
+                    <intent-filter>
+                        <action android:name="android.intent.action.MAIN" />
+                        <category android:name="android.intent.category.LAUNCHER" />
+                    </intent-filter>
+                </activity>
+                
+            </application>
+        
+        </manifest>
+        EOF
+        
+        # Create basic strings.xml
+        mkdir -p app/src/main/res/values
+        cat > app/src/main/res/values/strings.xml << 'EOF'
+        <resources>
+            <string name="app_name">Auto Backup Pro</string>
+        </resources>
+        EOF
+        
+    - name: Build APK
       run: |
-        if [ ! -f "gradle/wrapper/gradle-wrapper.jar" ]; then
-            echo "📥 Downloading gradle-wrapper.jar..."
-            mkdir -p gradle/wrapper
-            wget -q -O gradle/wrapper/gradle-wrapper.jar \
-                https://github.com/gradle/gradle/raw/master/gradle/wrapper/gradle-wrapper.jar
-        fi
-        
-    - name: Build Debug APK
-      run: |
-        echo "🔨 Building Debug APK..."
+        echo "🔨 Building APK..."
         ./gradlew assembleDebug --no-daemon --stacktrace
+      
+    - name: List Build Outputs
+      run: |
+        echo "📁 Build outputs:"
+        find . -name "*.apk" -type f | xargs ls -la
+        echo ""
+        echo "📦 APK location:"
+        ls -la app/build/outputs/apk/ || echo "No APK directory"
+        ls -la app/build/outputs/apk/debug/ 2>/dev/null || echo "No debug APK"
         
-    - name: Upload Debug APK
+    - name: Upload APK Artifact
+      if: success()
       uses: actions/upload-artifact@v4
       with:
-        name: AutoBackupPro-Debug
-        path: app/build/outputs/apk/debug/*.apk
+        name: AutoBackupPro-APK
+        path: |
+          app/build/outputs/apk/debug/*.apk
+          app/build/outputs/apk/debug/output-metadata.json
         retention-days: 7
+        if-no-files-found: error
