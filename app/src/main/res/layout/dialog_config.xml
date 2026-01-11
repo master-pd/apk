@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="16dp">
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Telegram Bot Configuration"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        android:layout_marginBottom="16dp" />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Bot Token:"
+        android:textSize="14sp"
+        android:layout_marginBottom="4dp" />
+
+    <EditText
+        android:id="@+id/etBotToken"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Enter bot token"
+        android:inputType="text"
+        android:padding="12dp"
+        android:background="@drawable/edittext_border"
+        android:layout_marginBottom="16dp" />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Your Telegram ID:"
+        android:textSize="14sp"
+        android:layout_marginBottom="4dp" />
+
+    <EditText
+        android:id="@+id/etOwnerId"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Enter your Telegram ID"
+        android:inputType="number"
+        android:padding="12dp"
+        android:background="@drawable/edittext_border" />
+
+</LinearLayout>
